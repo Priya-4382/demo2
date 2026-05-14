@@ -154,14 +154,14 @@ function App() {
             <div className="hidden lg:block">
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
-            <div className="flex-1 flex flex-col min-h-screen">
+            <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
               <Header 
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
               />
-              <main className="flex-1 overflow-auto p-4 lg:p-6">
+              <main className="flex-1 overflow-x-hidden overflow-y-auto p-2 lg:p-6">
                 <div className="max-w-7xl mx-auto">
                   <PredictionsTab />
                 </div>

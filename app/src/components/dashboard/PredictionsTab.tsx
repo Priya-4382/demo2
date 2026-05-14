@@ -135,7 +135,7 @@ export function PredictionsTab() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <StatCard title="Total Predictions" value={stats.total} trend="All time" />
         <StatCard 
           title="High Risk" 
@@ -600,13 +600,13 @@ function StatCard({
   alert?: boolean;
 }) {
   return (
-    <Card className={cn("glass-panel", alert && "border-red-500/30")}>
+    <Card className={cn("glass-panel w-full min-w-0", alert && "border-red-500/30")}>
       <CardContent className="p-4">
-        <p className="text-xs text-muted-foreground mb-1">{title}</p>
+        <p className="text-xs text-muted-foreground mb-1 truncate">{title}</p>
         <div className="flex items-baseline justify-between">
-          <span className="text-2xl font-bold">{value}</span>
+          <span className="text-xl sm:text-2xl text-2xl font-bold truncate">{value}</span>
           <span className={cn(
-            "text-xs",
+            "text-[10px] sm:text-xs shrink-0 whitespace-nowrap",
             alert ? "text-red-500" : "text-muted-foreground"
           )}>
             {trend}
