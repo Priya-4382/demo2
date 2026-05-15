@@ -229,10 +229,15 @@ export function PredictionsTab() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: 'var(--radius)'
                     }}
+
+                    labelStyle={{ color: '#ffffff' }} 
+                    itemStyle={{ color: '#ffffff' }}  
+                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} 
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {riskDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
+
                     ))}
                   </Bar>
                 </BarChart>
