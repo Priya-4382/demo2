@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   Activity, Filter, Download, Calendar, MapPin, TrendingUp, Clock, 
-  Trash2, Eye, Plus, RefreshCw, ChevronLeft, ChevronRight 
+  Trash2, Eye, Plus, RefreshCw, ChevronLeft, ChevronRight, CheckCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,8 @@ import { format } from 'date-fns';
 export function PredictionsTab() {
   const { predictions, deletePrediction, addPrediction } = useDashboardStore();
   const { hourlyPattern, dailyTrend, riskDistribution } = useChartData();
-  
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+
   // Filters
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,6 +100,7 @@ export function PredictionsTab() {
       }
     });
     setCreateDialogOpen(false);
+    setSuccessDialogOpen(true)
     setNewPrediction({ probability: 50, affectedArea: '', estimatedTimeToOutage: 2 });
   };
 
@@ -135,7 +137,7 @@ export function PredictionsTab() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Predictions" value={stats.total} trend="All time" />
         <StatCard 
           title="High Risk" 
@@ -349,23 +351,23 @@ export function PredictionsTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[400px]">
-            <Table>
+          <div className="rounded-md border overflow-x-auto reative">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Time</TableHead>
+                  <TableHead className= "sticky left-0 z-20 bg-card/95 backdrop-blur-xl border-none">Time</TableHead>
                   <TableHead>Risk Level</TableHead>
                   <TableHead>Probability</TableHead>
                   <TableHead>Area</TableHead>
-                  <TableHead>ETA</TableHead>
-                  <TableHead>Confidence</TableHead>
+                  <TableHead className="hidden sm:table-cell">ETA</TableHead>
+                  <TableHead className="hidden sm:table-cell">Confidence</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedPredictions.map((prediction) => (
                   <TableRow key={prediction.id}>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="sticky left-0 z-10 bg-card/95 backdrop-blur-xl font-medium border-none">
                       {format(new Date(prediction.timestamp), 'MMM d, HH:mm')}
                     </TableCell>
                     <TableCell>
@@ -408,7 +410,7 @@ export function PredictionsTab() {
                         ~{prediction.estimatedTimeToOutage}h
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-1">
                         <TrendingUp className="w-3 h-3 text-muted-foreground" />
                         {Math.round(prediction.confidence * 100)}%
@@ -439,7 +441,7 @@ export function PredictionsTab() {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
@@ -584,6 +586,22 @@ export function PredictionsTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </div>
+            <DialogTitle className="text-xl">Prediction Created</DialogTitle>
+            <DialogDescription className="mt-2">
+              The new outage prediction has been added successfully.
+            </DialogDescription>
+          
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
