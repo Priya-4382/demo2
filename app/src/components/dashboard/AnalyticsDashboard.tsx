@@ -247,7 +247,7 @@ export function AnalyticsDashboard() {
 
       {/* Charts Tabs */}
       <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
           <TabsTrigger value="performance">Model Performance</TabsTrigger>
           <TabsTrigger value="features">Feature Analysis</TabsTrigger>
           <TabsTrigger value="patterns">Outage Patterns</TabsTrigger>

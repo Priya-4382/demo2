@@ -113,7 +113,7 @@ export function LogsTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard title="Total" value={stats.total} icon={FileText} />
         <StatCard title="Info" value={stats.info} icon={Info} color="text-blue-500" />
         <StatCard title="Warnings" value={stats.warning} icon={AlertTriangle} color="text-yellow-500" />

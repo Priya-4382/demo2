@@ -356,11 +356,11 @@ export function PredictionsTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto reative">
+          <div className="rounded-md border overflow-x-auto rlative">
             <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className= "sticky left-0 z-20 bg-card/95 backdrop-blur-xl border-none">Time</TableHead>
+                  <TableHead className= "sticky left-0 z-20 bg-card backdrop-blur-xl border-none">Time</TableHead>
                   <TableHead>Risk Level</TableHead>
                   <TableHead>Probability</TableHead>
                   <TableHead>Area</TableHead>
@@ -372,7 +372,7 @@ export function PredictionsTab() {
               <TableBody>
                 {paginatedPredictions.map((prediction) => (
                   <TableRow key={prediction.id}>
-                    <TableCell className="sticky left-0 z-10 bg-card/95 backdrop-blur-xl font-medium border-none">
+                    <TableCell className="sticky left-0 z-10 bg-card backdrop-blur-xl font-medium border-none">
                       {format(new Date(prediction.timestamp), 'MMM d, HH:mm')}
                     </TableCell>
                     <TableCell>

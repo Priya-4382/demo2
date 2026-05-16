@@ -38,7 +38,7 @@ export function AlertsTab() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<typeof alerts[0] | null>(null);
   const [acknowledgmentNotes, setAcknowledgmentNotes] = useState('');
-  
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   // New alert form
   const [newAlert, setNewAlert] = useState({
     priority: 'medium' as const,
@@ -90,10 +90,13 @@ export function AlertsTab() {
     addAlert({
       type: newAlert.type,
       priority: newAlert.priority,
-      message: newAlert.message
+      message: newAlert.message,
+      
     });
     setCreateDialogOpen(false);
+    setSuccessDialogOpen(true);
     setNewAlert({ priority: 'medium', message: '', type: 'manual' });
+    setTimeout(() => setSuccessDialogOpen(false), 2000);
   };
 
   const handleExport = () => {
@@ -109,15 +112,16 @@ export function AlertsTab() {
   };
 
   const AlertTable = ({ alerts }: { alerts: typeof filteredAlerts }) => (
-    <Table>
+   <div className="relative overflow-x-auto rounded-md border border-border/50">
+   <Table className="min-w-[1000px] border-collapse ">
       <TableHeader>
-        <TableRow>
-          <TableHead>Time</TableHead>
+        <TableRow className="hover:bg-transparent">
+          <TableHead  className= "sticky left-0 z-20 bg-card backdrop-blur-xl border-none ">Time</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Priority</TableHead>
-          <TableHead>Message</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Assigned</TableHead>
+          <TableHead >Message</TableHead>
+          <TableHead >Status</TableHead>
+          <TableHead >Assigned</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -131,23 +135,23 @@ export function AlertsTab() {
         ) : (
           alerts.map((alert) => (
             <TableRow key={alert.id}>
-              <TableCell className="whitespace-nowrap">
+              <TableCell className="sticky left-0 z-10 bg-card backdrop-blur-xl whitespace-nowrap border-none font-medium">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-muted-foreground" />
                   {format(new Date(alert.timestamp), 'MMM d, HH:mm')}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell >
                 <Badge variant="outline" className="text-xs capitalize">
                   {alert.type}
                 </Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="whitespace-nowrap">
                 <Badge variant="outline" className={cn("text-xs", getPriorityColor(alert.priority))}>
                   {alert.priority}
                 </Badge>
               </TableCell>
-              <TableCell className="max-w-xs">
+              <TableCell className="max-w-[300px]">
                 <p className="truncate">{alert.message}</p>
               </TableCell>
               <TableCell>
@@ -155,7 +159,7 @@ export function AlertsTab() {
                   {alert.status}
                 </span>
               </TableCell>
-              <TableCell>
+              <TableCell className="whitespace-nowrap">
                 {alert.acknowledgedBy ? (
                   <div className="flex items-center gap-1">
                     <User className="w-3 h-3 text-muted-foreground" />
@@ -204,6 +208,7 @@ export function AlertsTab() {
         )}
       </TableBody>
     </Table>
+    </div>
   );
 
   return (
@@ -227,7 +232,7 @@ export function AlertsTab() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="glass-panel border-yellow-500/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -271,7 +276,7 @@ export function AlertsTab() {
 
       {/* Tabs */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
           <TabsTrigger value="all" onClick={() => setStatusFilter('all')}>
             All ({alerts.length})
           </TabsTrigger>
@@ -380,6 +385,21 @@ export function AlertsTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+  <DialogContent className="max-w-sm ">
+    <div className="flex flex-col items-center py-6 text-center">
+      <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+        <CheckCircle className="w-8 h-8 text-green-500" />
+      </div>
+      <DialogTitle className="text-xl text-white">Alert Created</DialogTitle>
+      <DialogDescription className="mt-2">
+        The new outage alert has been added successfully.
+      </DialogDescription>
+      
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   );
 
@@ -426,9 +446,9 @@ export function AlertsTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[500px]">
+          <div className="w-full">
             <AlertTable alerts={paginatedAlerts} />
-          </ScrollArea>
+          </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
