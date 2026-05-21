@@ -89,9 +89,9 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           <ScrollArea className="h-[280px] pr-4">
-            <div className="space-y-2">
+           <div className="space-y-3 px-2 py-1">
              {activeAlerts.map((alert) => (
                 <div 
                   key={alert.id}
@@ -101,10 +101,9 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
                     {/* Type Icon */}
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                     alert.priority === 'critical' ? "bg-red-500/10 border-red-500/20" :
-      alert.priority === 'high' ? "bg-orange-500/10 border-orange-500/20" :
-      alert.priority === 'moderate' ? "bg-yellow-500/10 border-yellow-500/20" : 
-      "bg-green-500/10 border-green-500/20"
+                      alert.priority === 'critical' ? "bg-red-500/10" :
+                      alert.priority === 'high' ? "bg-orange-500/10" :
+                      alert.priority === 'moderate' ? "bg-yellow-500/10" : "bg-green-500/10"
                     )}>
                       {getTypeIcon(alert.type)}
                     </div>
