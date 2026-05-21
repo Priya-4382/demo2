@@ -40,7 +40,9 @@ export const predictions: Prediction[] = [
     confidence: 0.85,
     estimatedTimeToOutage: 2.5,
     affectedArea: 'Lagos Central',
-    features: { temp_deviation: 2.8, humidity: 78, wind_speed: 12.5 }
+    features: { temp_deviation: 2.8, humidity: 78, wind_speed: 12.5,
+      voltage_level: 230.5,grid_load: 68.5,frequency_dev: 0.02
+    }
   },
   {
     id: 'pred-002',
@@ -110,7 +112,7 @@ export const alerts: Alert[] = [
     id: 'alert-003',
     timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
     type: 'threshold',
-    priority: 'medium',
+    priority: 'moderate',
     message: 'Voltage fluctuation detected in Abuja North substation',
     status: 'resolved',
     acknowledgedBy: 'Operator Sarah',
@@ -130,7 +132,7 @@ export const alerts: Alert[] = [
     id: 'alert-005',
     timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
     type: 'manual',
-    priority: 'medium',
+    priority: 'moderate',
     message: 'Scheduled maintenance window starting in 2 hours',
     status: 'acknowledged',
     acknowledgedBy: 'Admin',

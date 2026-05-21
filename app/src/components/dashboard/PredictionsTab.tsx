@@ -412,7 +412,7 @@ export function PredictionsTab() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-muted-foreground" />
-                        ~{prediction.estimatedTimeToOutage}h
+                        ~{Number(prediction.estimatedTimeToOutage).toFixed(1)}h
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -478,9 +478,9 @@ export function PredictionsTab() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> 
 
-      {/* View Prediction Dialog */}
+ {/* View Prediction Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -515,7 +515,7 @@ export function PredictionsTab() {
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50">
                   <p className="text-xs text-muted-foreground">Time to Outage</p>
-                  <p className="text-lg font-medium">~{selectedPrediction.estimatedTimeToOutage}h</p>
+                  <p className="text-lg font-medium">~{selectedPrediction.estimatedTimeToOutage.toFixed(1)}h</p>
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">

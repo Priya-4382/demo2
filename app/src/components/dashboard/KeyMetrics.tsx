@@ -2,7 +2,7 @@ import { Bell, Activity, Target, Server } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-interface KeyMetricsProps {
+interface KeyMetricsProps { 
   activeAlerts: number;
   predictionsToday: number;
   accuracy: number;

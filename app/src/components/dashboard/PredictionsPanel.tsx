@@ -1,4 +1,4 @@
-import { Activity, Clock, MapPin, TrendingUp, AlertTriangle, CheckCircle, Eye } from 'lucide-react';
+import { Activity, Clock, MapPin, TrendingUp, AlertTriangle, CheckCircle, Eye, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { Prediction } from '@/types/dashboard';
+import { useDashboardStore } from '@/hooks/useDashboard';
 import { useState } from 'react';
 import { format } from 'date-fns';
 
@@ -14,9 +15,10 @@ interface PredictionsPanelProps {
 }
 
 export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
+  const alertThreshold = useDashboardStore((state) => state?.alertThreshold ?? 70);
+  const riskBoundaries = useDashboardStore((state) => state?.riskBoundaries ?? { low: 30, moderate: 60, high: 80 });
   const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'low': return 'bg-green-500/10 text-green-500 border-green-500/30';
@@ -38,14 +40,16 @@ export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
   };
 
   const formatTimeAgo = (timestamp: string) => {
-    const diff = Date.now() - new Date(timestamp).getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
+    try {
+      const diff = Date.now() - new Date(timestamp).getTime();
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
+    } catch (e) { return 'Just now'; }
   };
 
-  if (predictions.length === 0) {
+  if (!predictions || predictions.length === 0) {
     return (
       <Card className="glass-panel">
         <CardHeader className="pb-2">
@@ -58,7 +62,6 @@ export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
           <div className="text-center py-8 text-muted-foreground">
             <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No active predictions</p>
-            <p className="text-sm">New predictions will appear here</p>
           </div>
         </CardContent>
       </Card>
@@ -74,107 +77,78 @@ export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
               <Activity className="w-5 h-5 text-primary" />
               Active Predictions
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
-              {predictions.length}
-            </Badge>
+            <Badge variant="outline" className="text-xs">{predictions.length}</Badge>
           </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[280px] pr-4">
             <div className="space-y-3">
-              {predictions.map((prediction) => (
-                <div 
-                  key={prediction.id}
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
-                  onClick={() => {
-                    setSelectedPrediction(prediction);
-                    setDialogOpen(true);
-                  }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      {/* Header */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge 
-                          variant="outline" 
-                          className={cn("text-xs font-medium", getRiskColor(prediction.riskLevel))}
-                        >
-                          {getRiskIcon(prediction.riskLevel)}
-                          <span className="ml-1 capitalize">{prediction.riskLevel}</span>
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimeAgo(prediction.timestamp)}
-                        </span>
-                      </div>
-
-                      {/* Probability */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-baseline gap-1">
+              {predictions.map((prediction) => {
+                const pct = Math.round(prediction.probability * 100);
+                return (
+                  <div key={prediction.id} className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className={cn("text-xs font-medium", getRiskColor(prediction.riskLevel))}>
+                            {getRiskIcon(prediction.riskLevel)}
+                            <span className="ml-1 capitalize">{prediction.riskLevel}</span>
+                          </Badge>
+                          {pct >= alertThreshold && (
+                            <div className="flex items-center text-orange-500 gap-1 animate-pulse">
+                              <Bell className="w-3 h-3" />
+                              <span className="text-[10px] font-bold">ALERTED</span>
+                            </div>
+                          )}
+                          <span className="text-xs text-muted-foreground">{formatTimeAgo(prediction.timestamp)}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mb-2">
                           <span className={cn(
                             "text-2xl font-bold",
-                            prediction.probability > 0.8 ? "text-red-500" :
-                            prediction.probability > 0.6 ? "text-orange-500" :
-                            prediction.probability > 0.3 ? "text-yellow-500" : "text-green-500"
+                            pct > riskBoundaries.high ? "text-red-500" : 
+                            pct > riskBoundaries.moderate ? "text-orange-500" :
+                            pct > riskBoundaries.low ? "text-yellow-500" : "text-green-500"
                           )}>
-                            {Math.round(prediction.probability * 100)}%
+                            {pct}%
                           </span>
                           <span className="text-xs text-muted-foreground">probability</span>
                         </div>
-                      </div>
-
-                      {/* Details */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {prediction.affectedArea && (
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {prediction.affectedArea && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{prediction.affectedArea}</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{prediction.affectedArea}</span>
+                            <Clock className="w-3 h-3" />
+                            <span>~{prediction.estimatedTimeToOutage.toFixed(1)}h</span>
                           </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>~{prediction.estimatedTimeToOutage.toFixed(1)}h</span>
                         </div>
                       </div>
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedPrediction(prediction); setDialogOpen(true); }}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
                     </div>
-
-                    {/* Action */}
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedPrediction(prediction);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mt-3">
-                    <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="mt-3 relative h-1.5 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={cn(
-                          "absolute h-full rounded-full transition-all duration-500",
-                          prediction.probability > 0.8 ? "bg-red-500" :
-                          prediction.probability > 0.6 ? "bg-orange-500" :
-                          prediction.probability > 0.3 ? "bg-yellow-500" : "bg-green-500"
+                        className={cn("absolute h-full rounded-full transition-all duration-500",
+                          pct > riskBoundaries.high ? "bg-red-500" : 
+                          pct > riskBoundaries.moderate ? "bg-orange-500" :
+                          pct > riskBoundaries.low ? "bg-yellow-500" : "bg-green-500"
                         )}
-                        style={{ width: `${prediction.probability * 100}%` }}
+                        style={{ width: `${pct}%` }}
                       />
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
 
-      {/* Prediction Detail Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Prediction Details</DialogTitle>

@@ -17,11 +17,12 @@ interface AlertsPanelProps {
 export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const activeAlerts = alerts.filter(alert => alert.status === 'pending');
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
-      case 'medium': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
+      case 'low': return 'bg-green-500/10 text-green-500 border-green-500/30';
+      case 'moderate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
       case 'high': return 'bg-orange-500/10 text-orange-500 border-orange-500/30';
       case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/30';
       default: return 'bg-muted text-muted-foreground';
@@ -54,7 +55,7 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
     return `${hours}h ago`;
   };
 
-  if (alerts.length === 0) {
+  if (activeAlerts.length === 0) {
     return (
       <Card className="glass-panel">
         <CardHeader className="pb-2">
@@ -84,14 +85,14 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
               Pending Alerts
             </CardTitle>
             <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500">
-              {alerts.length}
+              {activeAlerts.length}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[280px] pr-4">
             <div className="space-y-2">
-              {alerts.map((alert) => (
+             {activeAlerts.map((alert) => (
                 <div 
                   key={alert.id}
                   className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 hover:bg-yellow-500/10 transition-colors"
@@ -102,7 +103,7 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
                       "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
                       alert.priority === 'critical' ? "bg-red-500/10" :
                       alert.priority === 'high' ? "bg-orange-500/10" :
-                      alert.priority === 'medium' ? "bg-yellow-500/10" : "bg-blue-500/10"
+                      alert.priority === 'moderate' ? "bg-yellow-500/10" : "bg-green-500/10"
                     )}>
                       {getTypeIcon(alert.type)}
                     </div>

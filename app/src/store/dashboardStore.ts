@@ -6,7 +6,7 @@ import type {
   GridStatus, 
   WeatherData,
   NotificationSettings,
-  LogEntry
+  LogEntry, AppNotification
 } from '@/types/dashboard';
 
 // Generate unique IDs
@@ -92,7 +92,7 @@ const generateInitialAlerts = (): Alert[] => [
     id: 'alert-003',
     timestamp: new Date(Date.now() - 240 * 60000).toISOString(),
     type: 'threshold',
-    priority: 'medium',
+    priority: 'moderate',
     message: 'Voltage fluctuation detected in Abuja North substation',
     status: 'resolved',
     acknowledgedBy: 'Operator Sarah',
@@ -112,7 +112,7 @@ const generateInitialAlerts = (): Alert[] => [
     id: 'alert-005',
     timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
     type: 'manual',
-    priority: 'medium',
+    priority: 'moderate',
     message: 'Scheduled maintenance window starting in 2 hours',
     status: 'acknowledged',
     acknowledgedBy: 'Admin',
@@ -164,12 +164,14 @@ const generateInitialLogs = (): LogEntry[] => [
   }
 ];
 
-interface DashboardState {
+export interface DashboardState {
   // Data
   predictions: Prediction[];
-  notifications: Notification[];
+  
   alerts: Alert[];
   logs: LogEntry[];
+  notifications: AppNotification[];
+  pendingAlertsCount: number;
   
   // Settings
   notificationSettings: NotificationSettings;
@@ -206,6 +208,10 @@ interface DashboardState {
   updateAlertThreshold: (threshold: number) => void;
   updateRiskBoundaries: (boundaries: Partial<DashboardState['riskBoundaries']>) => void;
   
+  addNotification: (message: string, type: AppNotification['type']) => void;
+  resetAlertCount: () => void;
+  clearNotifications: () => void;
+
   // Actions - Real-time
   updateGridStatus: (status: Partial<GridStatus>) => void;
   updateWeather: (weather: Partial<WeatherData>) => void;
@@ -224,21 +230,24 @@ export const useDashboardStore = create<DashboardState>()(
       predictions: generateInitialPredictions(),
       alerts: generateInitialAlerts(),
       logs: generateInitialLogs(),
-      
+      notifications: [],
+      pendingAlertsCount: 0,
+
       // Default settings
       notificationSettings: {
         emailEnabled: true,
         smsEnabled: true,
         pushEnabled: true,
+        soundsEnabled:true,
         emailRecipients: ['admin@powergrid.ng', 'ops@powergrid.ng'],
         smsRecipients: ['+2348012345678'],
         alertThreshold: 70
       },
-      alertThreshold: 70,
+      alertThreshold: 30,
       riskBoundaries: {
-        low: 30,
-        moderate: 60,
-        high: 80
+        low: 20,
+        moderate: 40,
+        high: 50
       },
       
       // Current status
@@ -272,21 +281,18 @@ export const useDashboardStore = create<DashboardState>()(
         set((state) => ({ 
           predictions: [newPrediction, ...state.predictions] 
         }));
-        
-        // Auto-create alert if probability exceeds threshold
+
+        const currentRisk = get().getRiskLevel(prediction.probability);
         if (prediction.probability * 100 >= get().alertThreshold) {
           get().addAlert({
             type: 'prediction',
-            priority: prediction.probability > 0.8 ? 'critical' : 
-                     prediction.probability > 0.6 ? 'high' : 'medium',
+            priority: currentRisk,
             message: `Outage probability (${(prediction.probability * 100).toFixed(0)}%) detected for ${prediction.affectedArea || 'unknown area'}`,
             predictionId: newPrediction.id
           });
         }
-        
-        // Add log entry
         get().addLog({
-          level: 'info',
+          level: currentRisk === 'critical' ? 'error' : currentRisk === 'high' ? 'warning' : currentRisk === 'moderate' ? 'warning' : 'info',
           category: 'Prediction',
           message: 'New prediction generated',
           details: `Probability: ${(prediction.probability * 100).toFixed(0)}%, Risk: ${prediction.riskLevel}`
@@ -333,9 +339,13 @@ export const useDashboardStore = create<DashboardState>()(
         set((state) => ({ 
           alerts: [newAlert, ...state.alerts] 
         }));
+        get().addNotification(
+          alert.message, 
+          alert.priority 
+        );
         get().addLog({
           level: alert.priority === 'critical' ? 'error' : 
-                 alert.priority === 'high' ? 'warning' : 'info',
+                 (alert.priority === 'high' || alert.priority === 'moderate') ? 'warning' : 'info',
           category: 'Alert',
           message: `New ${alert.priority} alert created`,
           details: alert.message
@@ -404,27 +414,58 @@ export const useDashboardStore = create<DashboardState>()(
       },
       
       // Settings Actions
-      updateNotificationSettings: (settings) => {
-        set((state) => ({
-          notificationSettings: { ...state.notificationSettings, ...settings }
-        }));
-      },
+     updateNotificationSettings: (settings) => {
+  const currentSettings = get().notificationSettings;
+ (Object.keys(settings) as Array<keyof NotificationSettings>).forEach((key) => {
+    const oldValue = currentSettings[key];
+    const newValue = settings[key];
+
+    if (newValue !== oldValue) {
+      const cleanKey = key.replace(/Enabled|Settings/g, '').toLowerCase();
+
+      get().addLog({
+        level: 'success',
+        category: 'System',
+        message: `SETTINGS : ${cleanKey} changed`,
+        details: `Updated from ${oldValue} to ${newValue}`
+      });
+    }
+  });
+
+  set((state) => ({
+    notificationSettings: { ...state.notificationSettings, ...settings }
+  }));
+},
       
-      updateAlertThreshold: (threshold) => {
-        set({ alertThreshold: threshold });
-        get().addLog({
-          level: 'info',
-          category: 'System',
-          message: 'Alert threshold updated',
-          details: `New threshold: ${threshold}%`
-        });
-      },
-      
+     updateAlertThreshold: (threshold) => {
+  const oldThreshold = get().alertThreshold;
+  
+  if (threshold !== oldThreshold) {
+    set({ alertThreshold: threshold });
+    get().addLog({
+      level: 'success',
+      category: 'System',
+      message: ' THRESHOLDS : Alert threshold updated',
+      details: `${oldThreshold}% → ${threshold}%`
+    });
+  }
+},
+
       updateRiskBoundaries: (boundaries) => {
-        set((state) => ({
-          riskBoundaries: { ...state.riskBoundaries, ...boundaries }
-        }));
-      },
+  const current = get().riskBoundaries;
+  if (JSON.stringify(boundaries) !== JSON.stringify(current)) {
+    get().addLog({
+      level: 'success',
+      category: 'System',
+      message: 'THRESHOLDS : Risk boundaries updated',
+      details: `New Config: L:${boundaries.low} M:${boundaries.moderate} H:${boundaries.high}`
+    });
+
+    set((state) => ({
+      riskBoundaries: { ...state.riskBoundaries, ...boundaries }
+    }));
+  }
+},
       
       // Real-time Actions
       updateGridStatus: (status) => {
@@ -475,14 +516,33 @@ export const useDashboardStore = create<DashboardState>()(
         if (pct < moderate) return 'moderate';
         if (pct < high) return 'high';
         return 'critical';
-      }
+      },
+
+      addNotification: (message, type) => {
+  const { notificationSettings } = get();
+  if (notificationSettings.pushEnabled) {
+     set((state) => ({
+        notifications: [
+          { id: Math.random().toString(36).substr(2, 9), message, type, timestamp: new Date().toISOString() },
+          ...state.notifications
+        ].slice(0, 50), 
+        pendingAlertsCount: state.pendingAlertsCount + 1
+      }));
+    }},
+
+      resetAlertCount: () => set({ pendingAlertsCount: 0 }),
+
+      clearNotifications: () => set({ notifications: [], pendingAlertsCount: 0 }),
     }),
+    
     {
       name: 'dashboard-storage',
       partialize: (state) => ({
         predictions: state.predictions,
         alerts: state.alerts,
         logs: state.logs,
+        notifications: state.notifications,
+        pendingAlertsCount: state.pendingAlertsCount,
         notificationSettings: state.notificationSettings,
         alertThreshold: state.alertThreshold,
         riskBoundaries: state.riskBoundaries

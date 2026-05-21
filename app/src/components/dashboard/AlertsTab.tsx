@@ -41,7 +41,7 @@ export function AlertsTab() {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   // New alert form
   const [newAlert, setNewAlert] = useState({
-    priority: 'medium' as const,
+    priority: 'moderate' as const,
     message: '',
     type: 'manual' as const
   });
@@ -60,8 +60,8 @@ export function AlertsTab() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
-      case 'medium': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
+      case 'low': return 'bg-green-500/10 text-green-500 border-green-500/30';
+      case 'moderate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30';
       case 'high': return 'bg-orange-500/10 text-orange-500 border-orange-500/30';
       case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/30';
       default: return 'bg-muted text-muted-foreground';
@@ -95,7 +95,7 @@ export function AlertsTab() {
     });
     setCreateDialogOpen(false);
     setSuccessDialogOpen(true);
-    setNewAlert({ priority: 'medium', message: '', type: 'manual' });
+    setNewAlert({ priority: 'moderate', message: '', type: 'manual' });
     setTimeout(() => setSuccessDialogOpen(false), 2000);
   };
 
@@ -427,7 +427,7 @@ export function AlertsTab() {
                 <SelectContent>
                   <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="moderate">Moderate</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
                 </SelectContent>

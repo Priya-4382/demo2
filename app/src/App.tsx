@@ -19,39 +19,52 @@ import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { predictions } from '@/data/mockData';
 
-function Dashboard({ onTabChange, globalRisk, onMenuClick }: { onTabChange: (tab: string) => void , globalRisk: number, onMenuClick: () => void }) {
-  const { gridStatus, weather, predictions, alerts, getAlertsByStatus } = useDashboardStore();
+
+function Dashboard({
+  onTabChange,
+  globalRisk, onMenuClick ,
+  }:
+   { onTabChange: (tab: string) => void ,
+    globalRisk: number,
+     onMenuClick: () => void,
+      })
+      {
+  const { gridStatus, weather, predictions, alerts, getAlertsByStatus,acknowledgeAlert } = useDashboardStore();
   const stats = useDashboardStats();
-  
-  
+ 
+ 
+
 
   const alertCounts = getAlertsByStatus();
+
 
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
-        
+       
         <div className="hidden lg:block">
             <Sidebar activeTab="dashboard" onTabChange={onTabChange} />
         </div>
          
         <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-          <Header 
+          <Header
             isConnected={true}
             lastUpdate={new Date(gridStatus.timestamp)}
             pendingAlerts={alertCounts.pending}
             onMenuClick={onMenuClick}
+           
           />
-          
+         
           <main className="flex-1 overflow-auto p-4 lg:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
             {/* Key Metrics */}
-              <KeyMetrics 
+              <KeyMetrics
                 activeAlerts={alertCounts.pending}
                 predictionsToday={stats.predictionsToday}
                 accuracy={stats.avgAccuracy}
                 uptime={stats.uptime}
               />
+
 
               {/* Main Grid */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -64,18 +77,14 @@ function Dashboard({ onTabChange, globalRisk, onMenuClick }: { onTabChange: (tab
                   </div>
                 </div>
 
+
                {/* Right Column - Risk & Predictions */}
                 <div className="space-y-6">
                   <RiskGauge probability={globalRisk}  />
-                  <PredictionsPanel predictions={predictions.slice(0, 5)} />
-                                    <AlertsPanel 
-                    alerts={alerts.filter(a => a.status === 'pending').slice(0, 5)} 
-                    onAcknowledge={(id) => {
-                      const store = useDashboardStore.getState();
-                      store.acknowledgeAlert(id, 'Dashboard User');
-                    }}
-                    onViewAll={() => onTabChange('alerts')}
-                  />
+                  <PredictionsPanel predictions={predictions} />
+                                    <AlertsPanel alerts={alerts} onAcknowledge={acknowledgeAlert} />
+                    {/* onViewAll={() => onTabChange('alerts')} */}
+                  
                 </div>
               </div>
             </div>
@@ -86,35 +95,33 @@ function Dashboard({ onTabChange, globalRisk, onMenuClick }: { onTabChange: (tab
   );
 }
 
-
 const notificationSound = typeof Audio !== 'undefined' ? new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3') : null;
 const alertSiren = typeof Audio !== 'undefined' ? new Audio('https://assets.mixkit.co/active_storage/sfx/997/997-preview.mp3') : null;
 
 if (alertSiren) alertSiren.volume = 0.5;
 if (notificationSound) notificationSound.volume = 0.4;
 
+
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { getAlertsByStatus, alerts, notifications, notificationSettings, predictions: livePredictions} = useDashboardStore();
  
-  
-
     const currentAverage =useMemo(()  => {
     if (!livePredictions || livePredictions.length === 0) return 0;
 
-  const top5 = [...livePredictions]
+
+    const top5 = [...livePredictions]
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 5);
+
 
   const sum = top5.reduce((acc, p) => acc + p.probability, 0);
   return sum / top5.length;
 },[livePredictions]);
-
- 
- 
   const lastAlertCount = useRef(alerts.length);
   const lastNotificationCount = useRef(notifications?.length || 0);
+
 
   useEffect(() => {
     if (!notificationSettings.soundsEnabled) return;
@@ -133,19 +140,23 @@ function App() {
     }
     lastNotificationCount.current = notifications?.length || 0;
 
+
   }, [alerts.length, notifications?.length, notificationSettings.soundsEnabled]);
+
 
  // Start real-time simulation globally
   useRealTimeSimulation();
   const alertCounts = getAlertsByStatus();
-   const renderContent = () => { 
+   const renderContent = () => {
   switch (activeTab) {
     case 'dashboard':
-            return <Dashboard 
-               onTabChange={setActiveTab} 
-               globalRisk={currentAverage} 
-               onMenuClick={() => setMobileMenuOpen(true)} 
+            return <Dashboard
+               onTabChange={setActiveTab}
+               globalRisk={currentAverage}
+               onMenuClick={() => setMobileMenuOpen(true)}
+                
              />;
+
 
     case 'predictions':
       return (
@@ -155,11 +166,12 @@ function App() {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
-              <Header 
+              <Header
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
+               
               />
               <main className="flex-1 overflow-x-hidden overflow-y-auto p-2 lg:p-6">
                 <div className="max-w-7xl mx-auto">
@@ -171,6 +183,7 @@ function App() {
         </div>
       );
 
+
     case 'alerts':
       return (
         <div className="min-h-screen bg-background">
@@ -179,11 +192,12 @@ function App() {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
-              <Header 
+              <Header
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
+               
               />
               <main className="flex-1 overflow-auto p-4 lg:p-6">
                 <div className="max-w-7xl mx-auto">
@@ -195,6 +209,7 @@ function App() {
         </div>
       );
 
+
     case 'analytics':
       return (
         <div className="min-h-screen bg-background">
@@ -203,11 +218,12 @@ function App() {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
-              <Header 
+              <Header
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
+                
               />
               <main className="flex-1 overflow-auto p-4 lg:p-6">
                 <div className="max-w-7xl mx-auto">
@@ -219,6 +235,7 @@ function App() {
         </div>
       );
 
+
     case 'logs':
       return (
         <div className="min-h-screen bg-background">
@@ -227,11 +244,12 @@ function App() {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
-              <Header 
+              <Header
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
+                
               />
               <main className="flex-1 overflow-auto p-4 lg:p-6">
                 <div className="max-w-7xl mx-auto">
@@ -243,6 +261,7 @@ function App() {
         </div>
       );
 
+
     case 'settings':
       return (
         <div className="min-h-screen bg-background">
@@ -251,11 +270,12 @@ function App() {
               <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
             <div className="flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-hidden">
-              <Header 
+              <Header
                 isConnected={true}
                 lastUpdate={new Date()}
                 pendingAlerts={alertCounts.pending}
                 onMenuClick={() => setMobileMenuOpen(true)}
+               
               />
               <main className="flex-1 overflow-auto p-4 lg:p-6">
                 <div className="max-w-4xl mx-auto">
@@ -267,31 +287,47 @@ function App() {
         </div>
       );
 
+
+         
+   
+  
+
     default:
-            return <Dashboard onTabChange={setActiveTab} globalRisk={currentAverage} onMenuClick={() => setMobileMenuOpen(true)} />;
+            return <Dashboard
+            onTabChange={setActiveTab}
+            globalRisk={currentAverage}
+             onMenuClick={() => setMobileMenuOpen(true)}
+             />;
   }
 };
+
 
 return (
     <>
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
       <SheetContent side="left" className="p-0 w-64 border-r-0">
-        <Sidebar 
-          activeTab={activeTab} 
+        <Sidebar
+          activeTab={activeTab}
           onTabChange={(tab) => {
             setActiveTab(tab);
             setMobileMenuOpen(false);
-          }} 
+          }}
         />
       </SheetContent>
     </Sheet>
+
 
       {renderContent()}
     </>
   );
 }
 
+
 export default App;
 
 
+
+
  
+
+

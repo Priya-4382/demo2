@@ -9,7 +9,9 @@ export function useRealTimeSimulation() {
     updateWeather, 
     addPrediction,
     getRiskLevel,
-    alertThreshold 
+    addAlert,
+    alertThreshold ,
+    notificationSettings
   } = useDashboardStore();
   
   const [isRunning, setIsRunning] = useState(true);
@@ -82,8 +84,8 @@ export function useRealTimeSimulation() {
       if (weather.humidity > 80) baseProbability += 0.15;
       
       const probability = Math.min(0.95, Math.max(0.05, baseProbability + (Math.random() - 0.5) * 0.3));
+       
       
-      if (probability * 100 >= alertThreshold) {
         addPrediction({
           probability,
           riskLevel: getRiskLevel(probability),
@@ -98,7 +100,8 @@ export function useRealTimeSimulation() {
             load: useDashboardStore.getState().gridStatus.load
           }
         });
-      }
+    
+      
     }, 30000);
 
     return () => {
@@ -130,7 +133,7 @@ export function useDashboardStats() {
         activeAlerts: alertsByStatus.pending,
         acknowledgedAlerts: alertsByStatus.acknowledged,
         resolvedAlerts: alertsByStatus.resolved,
-        avgAccuracy: 75 + Math.floor(Math.random() * 5), // Simulated
+        avgAccuracy: 75 + Math.floor(Math.random() * 5), 
         uptime: 98.5
       });
     };

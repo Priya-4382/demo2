@@ -27,6 +27,7 @@ export function SettingsTab() {
   const { 
     notificationSettings, 
     updateNotificationSettings,
+    clearNotifications,
     alertThreshold,
     updateAlertThreshold,
     riskBoundaries,
@@ -57,21 +58,21 @@ export function SettingsTab() {
   const handleSave = async () => {
   setSaving(true);
   try {
-      await updateNotificationSettings(localSettings);
-      await updateAlertThreshold(localThreshold);
+    // These calls now trigger their own logs inside the store!
+    await updateNotificationSettings(localSettings);
+    await updateAlertThreshold(localThreshold);
     await updateRiskBoundaries(localBoundaries);
     
+    // UI Feedback only
     if (localSettings.soundsEnabled && saveSuccessSound) {
       saveSuccessSound.currentTime = 0;
-      saveSuccessSound.play().catch(e => console.error("Save sound failed", e));
+      saveSuccessSound.play().catch(e => console.error("Sound error", e));
     }
-
     setSaveDialogOpen(true);
-    setTimeout(() => {
-      setSaveDialogOpen(false);
-    }, 2500);
+    setTimeout(() => setSaveDialogOpen(false), 2500);
+
   } catch (error) {
-    console.error('Failed to save settings:', error);
+    console.error('Save failed', error);
   } finally {
     setSaving(false);
   }
@@ -115,6 +116,14 @@ export function SettingsTab() {
       smsRecipients: localSettings.smsRecipients.filter(p => p !== phone)
     });
   };
+
+  const handleTogglePush = (enabled: boolean) => {
+  updateNotificationSettings({ pushEnabled: enabled });
+  
+  if (!enabled) {
+    clearNotifications();
+  }
+};
 
   return (
     <div className="space-y-4">
@@ -299,11 +308,11 @@ export function SettingsTab() {
                 max={90}
                 step={5}
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              {/* <div className="flex justify-between text-xs text-muted-foreground">
                 <span>30% (More alerts)</span>
                 <span>60% (Balanced)</span>
                 <span>90% (Fewer alerts)</span>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
@@ -318,34 +327,58 @@ export function SettingsTab() {
                   title="Low Risk"
                   color="green"
                   value={localBoundaries.low}
-                  onChange={(v) => setLocalBoundaries({ ...localBoundaries, low: v })}
-                  max={localBoundaries.moderate - 1}
-                />
+                  rangeLabel={`0% - ${localBoundaries.low}%`}
+                 onChange={(v) => {
+      setLocalBoundaries(prev => {
+        const newLow = v;
+        const newModerate = Math.max(prev.moderate, newLow + 5);
+        const newHigh = Math.max(prev.high, newModerate + 5);
+        return { low: newLow, moderate: newModerate, high: newHigh };
+      });
+    }}
+    min={5}
+    max={90}
+  />
+
                 <RiskBoundaryCard 
                   title="Moderate Risk"
                   color="yellow"
                   value={localBoundaries.moderate}
-                  onChange={(v) => setLocalBoundaries({ ...localBoundaries, moderate: v })}
-                  min={localBoundaries.low + 1}
-                  max={localBoundaries.high - 1}
-                />
+                  rangeLabel={`${localBoundaries.low + 1}% - ${localBoundaries.moderate}%`}
+                 onChange={(v) => {
+      setLocalBoundaries(prev => {
+        const newModerate = v;
+        const newLow = Math.min(prev.low, newModerate - 5);
+        const newHigh = Math.max(prev.high, newModerate + 5);
+        return { low: newLow, moderate: newModerate, high: newHigh };
+      });
+    }}
+    min={10}
+    max={95}
+  />
                 <RiskBoundaryCard 
                   title="High Risk"
                   color="orange"
                   value={localBoundaries.high}
-                  onChange={(v) => setLocalBoundaries({ ...localBoundaries, high: v })}
-                  min={localBoundaries.moderate + 1}
-                  max={99}
-                />
+                  rangeLabel={`${localBoundaries.moderate + 1}% - ${localBoundaries.high}%`}
+                 onChange={(v) => {
+      setLocalBoundaries(prev => {
+        const newHigh = v;
+        const newModerate = Math.min(prev.moderate, newHigh - 5);
+        const newLow = Math.min(prev.low, newModerate - 5);
+        return { low: newLow, moderate: newModerate, high: newHigh };
+      });
+    }}
+    min={15}
+    max={99}
+  />
                 <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-3 h-3 rounded-full bg-red-500" />
                     <span className="font-medium">Critical Risk</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {localBoundaries.high}% - 100%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-2xl font-bold">{localBoundaries.high + 1}% - 100%</p>
+          <p className="text-xs text-muted-foreground mt-1 italic">
                     Automatic for values above High Risk threshold
                   </p>
                 </div>
@@ -606,6 +639,7 @@ function RiskBoundaryCard({
   title, 
   color, 
   value, 
+  rangeLabel,
   onChange,
   min = 0,
   max = 100
@@ -613,6 +647,7 @@ function RiskBoundaryCard({
   title: string; 
   color: string; 
   value: number;
+  rangeLabel: string;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
@@ -623,12 +658,26 @@ function RiskBoundaryCard({
     orange: 'bg-orange-500/10 border-orange-500/30'
   };
 
+  const dotClasses: Record<string, string> = {
+    green: 'bg-green-500',
+    yellow: 'bg-yellow-500',
+    orange: 'bg-orange-500'
+  };
+
   return (
     <div className={cn("p-4 rounded-lg border", colorClasses[color])}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className={cn("w-3 h-3 rounded-full", `bg-${color}-500`)} />
-        <span className="font-medium">{title}</span>
+      <div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={cn("w-2.5 h-2.5 rounded-full", dotClasses[color])} />
+        <span className="font-medium text-sm text-muted-foreground">{title}</span>
       </div>
+
+       <p className="text-lg font-semibold mb-4">
+        {rangeLabel}
+      </p>
+    </div>
+    
+        <div className="space-y-3">
       <div className="flex items-center gap-2">
         <input
           type="number"
@@ -636,9 +685,10 @@ function RiskBoundaryCard({
           max={max}
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
-          className="w-16 px-2 py-1 text-sm rounded border border-border bg-background"
+          className="w-14 h-8 px-2 text-sm rounded border border-border bg-background outline-none"
         />
-        <span className="text-sm text-muted-foreground">%</span>
+        
+        <span className="text-sm font-medium text-muted-foreground">%</span>
       </div>
       <input
         type="range"
@@ -648,6 +698,8 @@ function RiskBoundaryCard({
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-full mt-3"
       />
+    
+    </div>
     </div>
   );
 }

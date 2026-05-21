@@ -34,7 +34,7 @@ export interface Alert {
   id: string;
   timestamp: string;
   type: 'prediction' | 'threshold' | 'manual';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: 'low' | 'moderate' | 'high' | 'critical';
   message: string;
   status: 'pending' | 'acknowledged' | 'resolved';
   predictionId?: string;
@@ -86,6 +86,13 @@ export interface NotificationSettings {
   emailRecipients: string[];
   smsRecipients: string[];
   alertThreshold: number;
+}
+
+export interface AppNotification {
+  id: string;
+  message: string;
+  timestamp: string;
+  type: 'info' | 'warning' | 'error' | 'success'| 'critical' | 'high' | 'moderate' | 'low' | 'medium';
 }
 
 export interface User {
