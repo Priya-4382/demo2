@@ -94,7 +94,7 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
            <div className="space-y-3 px-2 py-1">
              {activeAlerts.map((alert) => (
                 <div 
-                  key={alert.id}
+                  // key={alert.id}
                   className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 hover:bg-yellow-500/10 transition-colors"
                 >
                   <div className="flex items-start gap-3">
