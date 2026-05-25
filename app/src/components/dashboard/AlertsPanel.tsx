@@ -106,6 +106,10 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
                       alert.priority === 'moderate' ? "bg-yellow-500/10" : "bg-green-500/10"
                     )}>
                       {getTypeIcon(alert.type)}
+                    
+                    
+                    
+                    
                     </div>
 
                     {/* Content */}
